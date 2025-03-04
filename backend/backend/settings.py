@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
 from datetime import timedelta
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -70,7 +71,7 @@ CORS_ALLOWED_ORIGINS = [
 
 CORS_ALLOW_ALL_ORIGINS = True
 
-FRONTEND_BASE_URL = "http://localhost:3000"
+FRONTEND_BASE_URL = "http://localhost:5173"
 
 AUTH_USER_MODEL = 'authentication.User'
 
@@ -186,3 +187,6 @@ SIMPLE_JWT = {
 EMAIL_VALIDATION_API_KEY = "6f326c689bc2423a84c9ffdc5823a6dd"
 
 # EMAIL_VALIDATION_API_KEY = "37d60bb0-8158-4ed4-b2fc-6fd26b924efc"
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')

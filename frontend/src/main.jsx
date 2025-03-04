@@ -1,4 +1,4 @@
-import { StrictMode } from 'react';
+import { StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, createBrowserRouter, createRoutesFromElements, Route, RouterProvider, Navigate } from 'react-router-dom';
 import './index.css';
@@ -16,35 +16,60 @@ import { Toaster } from "react-hot-toast";
 import Login from './component/Login.jsx';
 import SignUpPage from './component/Signup.jsx';
 import ForgotPassword from './component/ForgotPassword.jsx';
-import PrivateRoute from './component/PrivateRoute.jsx'; // Import PrivateRoute
+import PrivateRoute from './component/PrivateRoute.jsx';
+import Dashboard from './component/Dashboard.jsx';
+import VendorDashboard from './component/VendorDashboard.jsX';
+import VendorRoute from './component/VendorRoute.jsx';
 
-const router = createBrowserRouter(
-  createRoutesFromElements(
-    <Route path='/' element={<Layout />}>
-      {/* Public Routes */}
-      <Route path='' element={<First />} />
-      <Route path='app' element={<App />} />
-      <Route path='about' element={<About />} />
-      <Route path='contact' element={<Contact />} />
-      <Route path='category' element={<CategoriesPage />} />
-      <Route path='cardpage' element={<CardPage />} />
-      <Route path='login' element={<Login />} />
-      <Route path='signup' element={<SignUpPage />} />
-      <Route path='forgotpassword' element={<ForgotPassword />} />
+const AppWrapper = () => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userRole, setUserRole] = useState(null);
 
-      {/* Protected Routes (Requires Authentication) */}
-      <Route path='dashboard' element={<PrivateRoute><Dash /></PrivateRoute>} />
-      <Route path='business' element={<PrivateRoute><Business /></PrivateRoute>} />
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const role = localStorage.getItem("role"); // Fetch stored role
+    if (token) {
+      setIsAuthenticated(true);
+      setUserRole(role);
+    }
+  }, []);
 
-      {/* Redirect unknown routes to home */}
-      <Route path="*" element={<Navigate to="/" />} />
-    </Route>
-  )
-);
+  const router = createBrowserRouter(
+    createRoutesFromElements(
+      <Route path="/" element={<Layout />}>
+        {/* Public Routes */}
+        <Route path="" element={<First />} />
+        <Route path="app" element={<App />} />
+        <Route path="about" element={<About />} />
+        <Route path="contact" element={<Contact />} />
+        <Route path="category" element={<CategoriesPage />} />
+        <Route path="cardpage" element={<CardPage />} />
+        <Route path="login" element={<Login />} />
+        <Route path="signup" element={<SignUpPage />} />
+        <Route path="forgotpassword" element={<ForgotPassword />} />
+        <Route path="dashboard" element={<Dashboard />} />
 
-createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <RouterProvider router={router} />
-    <Toaster />
-  </StrictMode>
-);
+        {/* Protected Routes (Requires Authentication) */}
+        <Route path="dashboard" element={<PrivateRoute><Dash /></PrivateRoute>} />
+        <Route path="business" element={<PrivateRoute><Business /></PrivateRoute>} />
+
+        {/* Vendor Dashboard - Protected Route */}
+        <Route element={<VendorRoute isAuthenticated={isAuthenticated} userRole={userRole} />}>
+          <Route path="/vendor/dashboard" element={<VendorDashboard />} />
+        </Route>
+
+        {/* Redirect unknown routes to home */}
+        <Route path="*" element={<Navigate to="/" />} />
+      </Route>
+    )
+  );
+
+  return (
+    <StrictMode>
+      <RouterProvider router={router} />
+      <Toaster />
+    </StrictMode>
+  );
+};
+
+createRoot(document.getElementById('root')).render(<AppWrapper />);

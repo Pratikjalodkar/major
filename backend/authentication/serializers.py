@@ -1,4 +1,5 @@
-from builtins import dict, isinstance
+from .models import Category, Product
+from builtins import dict, isinstance, super
 import re
 from django.contrib.auth.hashers import make_password
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -205,3 +206,27 @@ class ResetPasswordSerializer(serializers.Serializer):
             raise serializers.ValidationError(
                 {"confirm_password": "Passwords do not match."})
         return data
+
+
+
+
+class ProductSerializer(serializers.ModelSerializer):
+
+    category = serializers.PrimaryKeyRelatedField(
+        queryset=Category.objects.all())  # Only ID in request
+    category_name = serializers.CharField(
+        source="category.name", read_only=True)
+    class Meta:
+        model = Product
+        fields = ['id', 'title', 'description', 'price',
+                  'category', 'category_name', 'inventory', 'image', 'is_active']
+        read_only_fields = ['vendor']  # Vendor is auto-set from request.user
+
+    def create(self, validated_data):
+        # Auto-set vendor to the logged-in user
+        validated_data['vendor'] = self.context['request'].user
+        return super().create(validated_data)
+
+
+
+

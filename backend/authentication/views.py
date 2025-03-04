@@ -1,6 +1,15 @@
-from .models import User  # Import your custom User model
+from rest_framework import generics, permissions
+from rest_framework.generics import DestroyAPIView
+from rest_framework.generics import RetrieveUpdateAPIView
+from rest_framework.generics import ListAPIView
+from rest_framework import serializers
+from django.contrib.auth import get_user_model
+from rest_framework import viewsets, permissions
+from django.contrib.auth import logout
+from rest_framework.permissions import IsAuthenticated
+from .models import Product, User  # Import your custom User model
 from django.contrib.auth import authenticate
-from builtins import Exception, str
+from builtins import Exception, print, str
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import AllowAny
 from django.contrib.auth import authenticate, get_user_model
@@ -13,13 +22,14 @@ from django.core.mail import send_mail
 from django.conf import settings
 from django.contrib.auth.tokens import default_token_generator
 from django.shortcuts import get_object_or_404
-from .serializers import RegisterSerializer
+from .serializers import ProductSerializer, RegisterSerializer
 from django.urls import reverse
 from .decorators import logout_required
+from django.contrib.auth.decorators import login_required
+
 
 User = get_user_model()
 
-# ✅ Register View (User Signup)
 # class RegisterView(APIView):
 #     permission_classes = [AllowAny]
 
@@ -67,7 +77,7 @@ class RegisterView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        print(f"📩 Incoming Data: {request.data}")  # Log incoming data
+        print(f"📩 Incoming Data: {request.data}")  
 
         serializer = RegisterSerializer(data=request.data)
         print(f"🔒 Serializer: {serializer}")
@@ -76,10 +86,9 @@ class RegisterView(APIView):
             user = serializer.save()
             return Response({"message": "User registered successfully"}, status=status.HTTP_201_CREATED)
 
-        print(f"❌ Serializer Errors: {serializer.errors}")  # Log errors
+        print(f"❌ Serializer Errors: {serializer.errors}")  
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-# ✅ Email Activation View
 class ActivateUserView(APIView):
     permission_classes = [AllowAny]
 
@@ -100,9 +109,6 @@ class ActivateUserView(APIView):
 
         except Exception:
             return Response({"error": "Invalid request"}, status=status.HTTP_400_BAD_REQUEST)
-
-
-# ✅ Login View
 
 
 class LoginView(APIView):
@@ -134,7 +140,14 @@ class LoginView(APIView):
 
         return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
 
-# ✅ Forgot Password (Sends Reset Email)
+
+class LogoutView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        logout(request) 
+        return Response({"message": "Logout successful"}, status=200)
+
 class ForgotPasswordView(APIView):
     permission_classes = [AllowAny]
 
@@ -163,7 +176,6 @@ class ForgotPasswordView(APIView):
         return Response({"error": "Email not found."}, status=status.HTTP_400_BAD_REQUEST)
 
 
-# ✅ Reset Password (Using Secure Token)
 class ResetPasswordView(APIView):
     permission_classes = [AllowAny]
 
@@ -187,3 +199,70 @@ class ResetPasswordView(APIView):
 
         except Exception:
             return Response({"error": "Invalid request"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class CheckAuthView(APIView):
+    
+    def get(self, request):
+        print(f"🔒 User: {request.user}")
+        if request.user.is_authenticated:
+            return Response({"isAuthenticated": True}, status=200)
+        return Response({"isAuthenticated": False}, status=200)
+
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    profilePic = serializers.ImageField(source="profile_image", required=False)
+    businessName = serializers.CharField(
+        source="business_name", required=False, allow_blank=True)
+    businessAddress = serializers.CharField(
+        source="business_address", required=False, allow_blank=True)
+
+    class Meta:
+        model = User
+        fields = ["username", "email", "role", "bio", "profilePic",
+                  "businessName", "businessAddress", "is_verified"]
+        read_only_fields = ["username", "email", "role", "is_verified"]
+
+    def validate(self, data):
+        # Vendors must have business name & address
+        if self.instance.role == "vendor" and (not data.get("business_name") or not data.get("business_address")):
+            raise serializers.ValidationError(
+                "Vendors must provide business name and address.")
+        return data
+
+
+class IsVendor(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return request.user.is_authenticated
+
+
+# API View for creating a product
+class CreateProductView(generics.CreateAPIView):
+    serializer_class = ProductSerializer
+    permission_classes = [permissions.IsAuthenticated, IsVendor]
+
+    def perform_create(self, serializer):
+        serializer.save(vendor=self.request.user)
+
+
+class VendorProductsView(ListAPIView):
+    serializer_class = ProductSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Product.objects.filter(vendor=self.request.user)
+
+
+class UpdateProductView(RetrieveUpdateAPIView):
+    serializer_class = ProductSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Product.objects.filter(vendor=self.request.user)
+
+
+class DeleteProductView(DestroyAPIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Product.objects.filter(vendor=self.request.user)
