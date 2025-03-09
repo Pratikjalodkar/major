@@ -20,6 +20,7 @@ import PrivateRoute from './component/PrivateRoute.jsx';
 import Dashboard from './component/Dashboard.jsx';
 import VendorDashboard from './component/VendorDashboard.jsX';
 import VendorRoute from './component/VendorRoute.jsx';
+import ProductDetail from './component/ProductDetail.jsx';
 
 const AppWrapper = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -57,6 +58,9 @@ const AppWrapper = () => {
         <Route element={<VendorRoute isAuthenticated={isAuthenticated} userRole={userRole} />}>
           <Route path="/vendor/dashboard" element={<VendorDashboard />} />
         </Route>
+
+        <Route path="/products/:id" element={<ProductDetail />} />
+
 
         {/* Redirect unknown routes to home */}
         <Route path="*" element={<Navigate to="/" />} />

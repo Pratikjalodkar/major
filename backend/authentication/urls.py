@@ -1,5 +1,7 @@
+from django.conf import settings
 from django.urls import path
-from .views import CheckAuthView, CreateProductView, DeleteProductView, ForgotPasswordView, LoginView, LogoutView, RegisterView, ActivateUserView, ResetPasswordView, UpdateProductView, VendorProductsView
+from .views import CheckAuthView, CreateProductView, DeleteProductView, ForgotPasswordView, LoginView, LogoutView, RegisterView, ActivateUserView, ResetPasswordView, UpdateProductView, VendorProductsView, get_product_detail
+from django.conf.urls.static import static
 
 urlpatterns = [
     path('register/', RegisterView.as_view(), name='register'),
@@ -17,5 +19,10 @@ urlpatterns = [
          UpdateProductView.as_view(), name="update-product"),
     path("products/delete/<int:pk>/",
          DeleteProductView.as_view(), name="delete-product"),
+    path('products/<int:product_id>/', get_product_detail, name='product_detail'),
 
 ]
+
+# if settings.DEBUG:
+#     urlpatterns += static(settings.MEDIA_URL,
+#                           document_root=settings.MEDIA_ROOT)

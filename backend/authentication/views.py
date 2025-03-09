@@ -1,3 +1,8 @@
+from rest_framework.decorators import api_view
+from .serializers import ProductSerializer
+from .models import Product
+from django.utils.timezone import now
+from django.contrib.sessions.models import Session
 from rest_framework import generics, permissions
 from rest_framework.generics import DestroyAPIView
 from rest_framework.generics import RetrieveUpdateAPIView
@@ -7,7 +12,7 @@ from django.contrib.auth import get_user_model
 from rest_framework import viewsets, permissions
 from django.contrib.auth import logout
 from rest_framework.permissions import IsAuthenticated
-from .models import Product, User  # Import your custom User model
+from .models import Category, Product, User  # Import your custom User model
 from django.contrib.auth import authenticate
 from builtins import Exception, print, str
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -202,12 +207,29 @@ class ResetPasswordView(APIView):
 
 
 class CheckAuthView(APIView):
-    
     def get(self, request):
-        print(f"🔒 User: {request.user}")
+        print(
+            f"🔍 User: {request.user}, Authenticated: {request.user.is_authenticated}")
+
+        # Debug: Check if session ID is present
+        session_id = request.COOKIES.get("sessionid")
+        print(f"🔍 Session ID from cookies: {session_id}")
+
+        # Verify session exists in DB
+        if session_id:
+            try:
+                session = Session.objects.get(session_key=session_id)
+                data = session.get_decoded()
+                print(f"🔍 Decoded session data: {data}")
+                if "_auth_user_id" in data:
+                    print(f"✅ User ID from session: {data['_auth_user_id']}")
+            except Session.DoesNotExist:
+                print("❌ Session does not exist in DB")
+
         if request.user.is_authenticated:
             return Response({"isAuthenticated": True}, status=200)
         return Response({"isAuthenticated": False}, status=200)
+
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
@@ -242,7 +264,8 @@ class CreateProductView(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticated, IsVendor]
 
     def perform_create(self, serializer):
-        serializer.save(vendor=self.request.user)
+        fashion_category = get_object_or_404(Category, name="Fashion")
+        serializer.save(vendor=self.request.user, category=fashion_category)
 
 
 class VendorProductsView(ListAPIView):
@@ -266,3 +289,26 @@ class DeleteProductView(DestroyAPIView):
 
     def get_queryset(self):
         return Product.objects.filter(vendor=self.request.user)
+
+
+@api_view(["GET"])
+def get_product_detail(request, product_id):
+    try:
+        product = Product.objects.get(id=product_id)
+        serializer = ProductSerializer(product)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    except Product.DoesNotExist:
+        return Response({"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND)
+
+
+
+
+
+
+
+
+
+
+
+
+

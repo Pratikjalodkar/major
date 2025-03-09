@@ -1,3 +1,4 @@
+from django.shortcuts import get_object_or_404
 from .models import Category, Product
 from builtins import dict, isinstance, super
 import re
@@ -208,25 +209,28 @@ class ResetPasswordSerializer(serializers.Serializer):
         return data
 
 
-
-
 class ProductSerializer(serializers.ModelSerializer):
-
     category = serializers.PrimaryKeyRelatedField(
-        queryset=Category.objects.all())  # Only ID in request
+        queryset=Category.objects.all(), required=False)
     category_name = serializers.CharField(
         source="category.name", read_only=True)
+
     class Meta:
         model = Product
-        fields = ['id', 'title', 'description', 'price',
-                  'category', 'category_name', 'inventory', 'image', 'is_active']
-        read_only_fields = ['vendor']  # Vendor is auto-set from request.user
+        fields = ['id', 'title', 'description', 'price', 'category',
+                  'category_name', 'inventory', 'image', 'is_active']
+        read_only_fields = ['vendor']
 
     def create(self, validated_data):
         # Auto-set vendor to the logged-in user
         validated_data['vendor'] = self.context['request'].user
-        return super().create(validated_data)
 
+        # If no category is provided, default to "Fashion"
+        if 'category' not in validated_data:
+            fashion_category = get_object_or_404(Category, name="Fashion")
+            validated_data['category'] = fashion_category
+
+        return super().create(validated_data)
 
 
 
