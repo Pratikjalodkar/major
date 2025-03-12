@@ -1,3 +1,5 @@
+from django.utils.decorators import method_decorator
+from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.decorators import api_view
 from .serializers import ProductSerializer
 from .models import Product
@@ -116,14 +118,24 @@ class ActivateUserView(APIView):
             return Response({"error": "Invalid request"}, status=status.HTTP_400_BAD_REQUEST)
 
 
+
 class LoginView(APIView):
     permission_classes = [AllowAny]
 
+    # @method_decorator(logout_required)
     @logout_required
     def post(self, request):
+        # print(f"User: {request.user}, Auth: {request.auth}")
+        # auth = JWTAuthentication()
+        # user_auth_tuple = auth.authenticate(request)
+
+        # if user_auth_tuple is not None:
+        #     user, _ = user_auth_tuple
+        #     return Response({"error": "You are already logged in."}, status=status.HTTP_400_BAD_REQUEST)
+
         email = request.data.get("email")
         password = request.data.get("password")
-        print(email, password)
+        # print(email, password)
 
         if not email or not password:
             return Response({"error": "Both email and password are required."}, status=status.HTTP_400_BAD_REQUEST)
