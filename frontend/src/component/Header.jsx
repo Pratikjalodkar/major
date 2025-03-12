@@ -11,11 +11,15 @@ export default function Header() {
 
   // ✅ Check authentication when the component mounts
   useEffect(() => {
-    axios
-      .get("http://127.0.0.1:8000/api/auth/check-auth/", { withCredentials: true })
+    const token = localStorage.getItem("access_token");
+
+    axios.get("http://127.0.0.1:8000/api/auth/check-auth/", {
+      headers: { Authorization: `Bearer ${token}` },
+      withCredentials: true
+    })
       .then((response) => {
         setIsLoggedIn(response.data.isAuthenticated);
-        localStorage.setItem("isLoggedIn", response.data.isAuthenticated);
+        localStorage.setItem("isLoggedIn", response.data.isAuthenticated ? "true" : "false");
       })
       .catch(() => {
         setIsLoggedIn(false);
@@ -23,25 +27,56 @@ export default function Header() {
       });
   }, []);
 
+  // useEffect(() => {
+  //   axios
+  //     .get("http://127.0.0.1:8000/api/auth/check-auth/", { withCredentials: true })
+  //     .then((response) => {
+  //       setIsLoggedIn(response.data.isAuthenticated);
+  //       localStorage.setItem("isLoggedIn", response.data.isAuthenticated);
+  //     })
+  //     .catch(() => {
+  //       setIsLoggedIn(false);
+  //       localStorage.setItem("isLoggedIn", "false");
+  //     });
+  // }, []);
+
   // ✅ Logout Function
+  
+  
   const handleLogout = async () => {
     try {
-      const response = await axios.post(
-        "http://127.0.0.1:8000/api/auth/logout/",
-        {},
-        { withCredentials: true }
-      );
+      await axios.post("http://127.0.0.1:8000/api/auth/logout/", {}, { withCredentials: true });
 
-      if (response.status === 200) {
-        console.log("Logged out successfully");
-        setIsLoggedIn(false);
-        localStorage.setItem("isLoggedIn", "false");
-        navigate("/login");
-      }
+      // ✅ Remove tokens from localStorage
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("refresh_token");
+      localStorage.setItem("isLoggedIn", "false");
+
+      setIsLoggedIn(false);
+      navigate("/login");
     } catch (error) {
       console.error("Error logging out:", error);
     }
   };
+
+  // const handleLogout = async () => {
+  //   try {
+  //     const response = await axios.post(
+  //       "http://127.0.0.1:8000/api/auth/logout/",
+  //       {},
+  //       { withCredentials: true }
+  //     );
+
+  //     if (response.status === 200) {
+  //       console.log("Logged out successfully");
+  //       setIsLoggedIn(false);
+  //       localStorage.setItem("isLoggedIn", "false");
+  //       navigate("/login");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error logging out:", error);
+  //   }
+  // };
 
   return (
     <header className="shadow sticky z-50 top-0">

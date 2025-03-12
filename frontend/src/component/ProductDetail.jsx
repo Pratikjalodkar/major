@@ -31,19 +31,47 @@ const ProductDetail = () => {
     const handleEditChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
+    
+    const handleUpdateProduct = async (e) => {
+        e.preventDefault();
+        const formDataObj = new FormData();
 
-    const handleUpdateProduct = async () => {
+        Object.keys(formData).forEach((key) => {
+            if (key === "image") {
+                if (formData[key] instanceof File) {
+                    formDataObj.append(key, formData[key]);
+                }
+            } else {
+                formDataObj.append(key, String(formData[key]));
+            }
+        });
+
         try {
-            await axios.put(`http://127.0.0.1:8000/api/auth/products/update/${id}/`, formData, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const response = await axios.put(
+                `http://127.0.0.1:8000/api/auth/products/update/${id}/`,
+                formDataObj,
+                {
+                    headers: {
+                        "Content-Type": "multipart/form-data",
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+            setProduct((prevProduct) => ({ ...prevProduct, ...formData }));
+
+            console.log("API Response:", response);
             alert("Product updated successfully!");
-            setShowEditModal(false);
-            setProduct(formData);
+            setShowEditModal(false); // Close modal after update
+            
+
         } catch (error) {
-            alert("Error updating product");
+            console.error("Error updating product:", error.response?.data || error);
+            alert(`Error updating product: ${JSON.stringify(error.response?.data)}`);
         }
     };
+
+
+
 
     const handleDeleteProduct = async () => {
         try {
@@ -51,7 +79,7 @@ const ProductDetail = () => {
                 headers: { Authorization: `Bearer ${token}` }
             });
             alert("Product deleted successfully!");
-            navigate("/dashboard");
+            navigate("/vendor/dashboard");
         } catch (error) {
             alert("Error deleting product");
         }
@@ -87,6 +115,8 @@ const ProductDetail = () => {
                         <textarea name="description" value={formData.description} onChange={handleEditChange} className="border p-2 w-full mb-2" placeholder="Description"></textarea>
                         <input type="number" name="price" value={formData.price} onChange={handleEditChange} className="border p-2 w-full mb-2" placeholder="Price" />
                         <input type="number" name="inventory" value={formData.inventory} onChange={handleEditChange} className="border p-2 w-full mb-2" placeholder="Inventory" />
+                        <input type="file" id="imageInput" name="image" onChange={handleEditChange} className="border p-2 w-full" />
+
                         <div className="flex space-x-4 mt-4">
                             <button onClick={handleUpdateProduct} className="bg-green-500 text-white px-4 py-2 rounded">Save</button>
                             <button onClick={() => setShowEditModal(false)} className="bg-gray-400 text-white px-4 py-2 rounded">Cancel</button>
