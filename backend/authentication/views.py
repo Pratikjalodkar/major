@@ -1,8 +1,8 @@
 from django.utils.decorators import method_decorator
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.decorators import api_view
-from .serializers import ProductSerializer
-from .models import Product
+from .serializers import ProductSerializer, VendorProfileSerializer
+from .models import Product, VendorProfile
 from django.utils.timezone import now
 from django.contrib.sessions.models import Session
 from rest_framework import generics, permissions
@@ -313,6 +313,14 @@ def get_product_detail(request, product_id):
         return Response({"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND)
 
 
+class VendorProfileView(generics.RetrieveUpdateAPIView):
+    queryset = VendorProfile.objects.all()
+    serializer_class = VendorProfileSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        # Return the profile of the currently authenticated user
+        return self.get_queryset().get(user=self.request.user)
 
 
 

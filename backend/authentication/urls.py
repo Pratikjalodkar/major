@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.urls import path
-from .views import CheckAuthView, CreateProductView, DeleteProductView, ForgotPasswordView, LoginView, LogoutView, RegisterView, ActivateUserView, ResetPasswordView, UpdateProductView, VendorProductsView, get_product_detail
+from .views import CheckAuthView, CreateProductView, DeleteProductView, ForgotPasswordView, LoginView, LogoutView, RegisterView, ActivateUserView, ResetPasswordView, UpdateProductView, VendorProductsView, VendorProfileView, get_product_detail
 from django.conf.urls.static import static
 
 urlpatterns = [
@@ -20,6 +20,7 @@ urlpatterns = [
     path("products/delete/<int:pk>/",
          DeleteProductView.as_view(), name="delete-product"),
     path('products/<int:product_id>/', get_product_detail, name='product_detail'),
+    path('profile/', VendorProfileView.as_view(), name='vendor-profile'),
 
 ]
 

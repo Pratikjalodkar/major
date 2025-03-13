@@ -1,5 +1,5 @@
 from django.shortcuts import get_object_or_404
-from .models import Category, Product
+from .models import Category, Product, VendorProfile
 from builtins import dict, isinstance, super
 import re
 from django.contrib.auth.hashers import make_password
@@ -233,4 +233,8 @@ class ProductSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
 
+class VendorProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VendorProfile
+        fields = ['id', 'user', 'phone', 'address']
 

@@ -88,4 +88,14 @@ class Product(models.Model):
         return self.title
 
 
+class VendorProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    phone = models.CharField(max_length=15, blank=True)
+    address = models.TextField(blank=True)
+
+    def __str__(self):
+        return self.user.username
+
+
+
 
